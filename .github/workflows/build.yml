@@ -1,0 +1,41 @@
+# .github/workflows/build.yml
+name: Build Win7-Compatible EXE
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-2016  # GitHub 提供的 Win Server 2016 ≈ Win10，但支持 Python 3.8
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Python 3.8
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.8.10'
+
+    - name: Install dependencies
+      run: |
+        pip install pyinstaller==4.10
+
+    - name: Build executable
+      run: |
+        pyinstaller --onefile --windowed --exclude-module _bootlocale --clean ping_tool.py
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ping-tool-win7-compatible
+        path: dist/ping_tool.exe
+
+    - name: Create Release (optional)
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v2
+      with:
+        files: dist/ping_tool.exe
+        token: ${{ secrets.GITHUB_TOKEN }}
